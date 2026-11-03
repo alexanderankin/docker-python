@@ -1,0 +1,9 @@
+__pycache__/
+*.egg-info/
+build/
+dist/
+.venv/
+
+# Generated API models and commands; keep version package metadata.
+/versions/*/src/docker_python/versions/*/commands/*
+/versions/*/src/docker_python/versions/*/models/*

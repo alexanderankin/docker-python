@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "docker-python-examples"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+    "docker-python-core==0.1.0",
+    "docker-python-v-1-40==0.1.0",
+    "docker-python-v-1-44==0.1.0",
+    "docker-python-v-1-55==0.1.0",
+    "docker-python-requests==0.1.0",
+]
+
+[project.scripts]
+docker-python-example = "docker_python_examples.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.uv.sources]
+docker-python-core = { path = "../core", editable = true }
+docker-python-requests = { path = "../docker-python-requests", editable = true }
+docker-python-v-1-40 = { path = "../versions/v1.40", editable = true }
+docker-python-v-1-44 = { path = "../versions/v1.44", editable = true }
+docker-python-v-1-55 = { path = "../versions/v1.55", editable = true }
