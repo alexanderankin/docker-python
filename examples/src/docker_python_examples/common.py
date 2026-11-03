@@ -15,10 +15,6 @@ def parser(description: str) -> argparse.ArgumentParser:
     return result
 
 
-def configure_logging() -> None:
-    logging.basicConfig(level=logging.INFO, format='%(message)s')
-
-
 def log_error(error: DockerError | RequestException | ValueError) -> int:
     LOGGER.error('%s', error)
     return 1

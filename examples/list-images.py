@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
+import logging
 from contextlib import closing
 
 from docker_python.core import DockerError
 from docker_python.transports.requests import RequestsTransport
 from docker_python.versions.v_1_44 import DockerClient
-from docker_python_examples.common import LOGGER, configure_logging, log_error, parser
+from docker_python_examples.common import LOGGER, log_error, parser
 from requests.exceptions import RequestException
 
 
 def main() -> int:
-    configure_logging()
+    logging.basicConfig(level=logging.INFO, format='%(message)s')
     argument_parser = parser('List images using Docker API 1.44.')
     argument_parser.add_argument('--all', action='store_true', help='Include intermediate images')
     args = argument_parser.parse_args()

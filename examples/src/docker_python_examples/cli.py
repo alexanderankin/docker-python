@@ -1,3 +1,4 @@
+import logging
 from contextlib import closing
 from importlib import import_module
 
@@ -5,13 +6,13 @@ from docker_python.core import DockerError
 from docker_python.transports.requests import RequestsTransport
 from requests.exceptions import RequestException
 
-from .common import LOGGER, configure_logging, log_error, parser
+from .common import LOGGER, log_error, parser
 
 API_VERSIONS = ('v_1_40', 'v_1_44', 'v_1_55')
 
 
 def main() -> int:
-    configure_logging()
+    logging.basicConfig(level=logging.INFO, format='%(message)s')
     argument_parser = parser('Run basic Docker commands with a selected generated API package.')
     argument_parser.add_argument('--api-version', choices=API_VERSIONS, default='v_1_55')
     commands = argument_parser.add_subparsers(dest='command', required=True)
