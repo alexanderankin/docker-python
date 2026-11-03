@@ -10,3 +10,6 @@ dependencies = ['docker-python-core==0.1.0', 'PyYAML>=6']
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.uv.sources]
+docker-python-core = { path = "../core", editable = true }

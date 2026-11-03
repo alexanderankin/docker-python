@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from .discovery import OperationDefinition, SchemaDiscovery, parameter_schema
-from .models import GENERATED, class_name, snake
+from .models import GENERATED, class_name, prune_generated_modules, snake
 from .swagger import Parameter, Swagger
 
 
@@ -19,14 +19,12 @@ class CommandGenerator:
     spec: Swagger
 
     def parameter_type(self, discovery: SchemaDiscovery, operation: OperationDefinition, parameter: Parameter) -> str:
-        model = discovery.model_name(operation.parameter_model(parameter), parameter_schema(parameter))
-        return 'models.' + class_name(model)
+        return discovery.annotation(operation.parameter_model(parameter), parameter_schema(parameter))
 
     def response_type(self, discovery: SchemaDiscovery, operation: OperationDefinition, status: str) -> str:
         response = operation.responses[status]
         if 'schema' in response:
-            model = discovery.model_name(operation.response_model(status), response['schema'])
-            return 'models.' + class_name(model)
+            return discovery.annotation(operation.response_model(status), response['schema'])
         if status == '204' or operation.method == 'HEAD':
             return 'None'
         return 'Any'  # Swagger does not specify a body; preserve text/binary responses.
@@ -143,8 +141,10 @@ class {name}(Command[{result_type}]):
         init = GENERATED + ''.join(f'from .{module} import {name}\n' for module, name in exports)
         init += '\n__all__ = ' + repr([name for _, name in exports]) + '\n'
         (directory / '__init__.py').write_text(init)
+        prune_generated_modules(directory, {module for module, _ in exports} | {'__init__'})
         client = GENERATED + f'''from __future__ import annotations
 
+from typing import Any
 from docker_python.core import Client, Transport
 from docker_python.core.models import bind_model_types
 from docker_python.core.parameters import UNSET, Unset

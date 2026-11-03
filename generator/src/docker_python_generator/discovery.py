@@ -3,6 +3,7 @@ from dataclasses import dataclass
 import re
 from typing import Any, Iterator, cast
 
+from .models import class_name, primitive_annotation
 from .swagger import Operation, Parameter, Response, Schema, Swagger
 
 HTTP_METHODS = {'get', 'put', 'post', 'delete', 'options', 'head', 'patch'}
@@ -78,25 +79,54 @@ class SchemaDiscovery:
                              for status, response in operation['responses'].items()}
                 yield OperationDefinition(path, method.upper(), operation, list(parameters.values()), responses)
 
-    def model_name(self, name: str, schema: Schema) -> str:
-        if '$ref' in schema and len(schema) == 1:
-            ref = schema['$ref']
-            if ref.startswith('#/definitions/') and ref.removeprefix('#/definitions/') in self.spec['definitions']:
-                return ref.removeprefix('#/definitions/')
+    def normalize(self, schema: Schema) -> Schema:
+        # A one-part allOf is commonly just a reference with a description.
+        if 'allOf' in schema and len(schema['allOf']) == 1 and 'properties' not in schema:
+            merged = {**schema['allOf'][0], **{key: value for key, value in schema.items() if key != 'allOf'}}
+            return self.normalize(merged)
+        return schema
+
+    def reference_name(self, schema: Schema) -> str:
+        ref = schema['$ref']
+        name = ref.removeprefix('#/definitions/')
+        if not ref.startswith('#/definitions/') or name not in self.spec['definitions']:
+            raise ValueError(f'Unknown definition: {ref}')
         return name
 
+    def annotation(self, name: str, schema: Schema) -> str:
+        schema = self.normalize(schema)
+        if '$ref' in schema:
+            annotation = 'models.' + class_name(self.reference_name(schema))
+        elif schema.get('enum') or 'properties' in schema or 'allOf' in schema:
+            annotation = 'models.' + class_name(name)
+        elif schema.get('type') == 'array':
+            annotation = f'list[{self.annotation(name + "Item", schema.get("items", {}))}]'
+        elif schema.get('type') == 'object' or 'additionalProperties' in schema:
+            value = schema.get('additionalProperties', {})
+            item = self.annotation(name + 'Value', value) if isinstance(value, dict) else 'Any'
+            annotation = f'dict[str, {item}]'
+        else:
+            annotation = primitive_annotation(schema)
+        if schema.get('x-nullable') and annotation != 'Any':
+            annotation += ' | None'
+        return annotation
+
     def collect(self) -> dict[str, Schema]:
+        # Preserve names explicitly defined by the API, including recursive aliases.
         schemas = dict(self.spec['definitions'])
 
         def add(name: str, schema: Schema) -> None:
-            if '$ref' in schema and len(schema) == 1 and schema['$ref'].startswith('#/definitions/'):
-                target = schema['$ref'].removeprefix('#/definitions/')
-                if target not in self.spec['definitions']:
-                    raise ValueError(f'Unknown definition: {target}')
-                return
-            if name in schemas:
-                raise ValueError(f'Operation type name collides with another model: {name}')
-            schemas[name] = schema
+            schema = self.normalize(schema)
+            if '$ref' in schema:
+                self.reference_name(schema)
+            elif schema.get('enum') or 'properties' in schema or 'allOf' in schema:
+                if name in schemas:
+                    raise ValueError(f'Operation type name collides with another model: {name}')
+                schemas[name] = schema
+            elif schema.get('type') == 'array':
+                add(name + 'Item', schema.get('items', {}))
+            elif isinstance(schema.get('additionalProperties'), dict):
+                add(name + 'Value', schema['additionalProperties'])
 
         for definition in self.operations():
             for parameter in definition.parameters:

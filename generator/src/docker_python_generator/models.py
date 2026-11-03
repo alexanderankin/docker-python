@@ -24,6 +24,13 @@ def class_name(name: str) -> str:
     return '_' + result if result[0].isdigit() else result
 
 
+def primitive_annotation(schema: Schema) -> str:
+    return {
+        'string': 'bytes' if schema.get('format') == 'binary' else 'str',
+        'file': 'bytes', 'integer': 'int', 'number': 'float', 'boolean': 'bool',
+    }.get(schema.get('type', ''), 'Any')
+
+
 def runtime_alias(annotation: str, references: set[str]) -> str:
     """Aliases execute immediately, so their external names need ForwardRefs."""
     symbols = {class_name(name) for name in references}
@@ -40,6 +47,12 @@ def runtime_alias(annotation: str, references: set[str]) -> str:
 
     tree = DeferReferences().visit(ast.parse(annotation, mode='eval'))
     return ast.unparse(ast.fix_missing_locations(tree))
+
+
+def prune_generated_modules(directory: Path, modules: set[str]) -> None:
+    for path in directory.glob('*.py'):
+        if path.stem not in modules and path.read_text().startswith(GENERATED):
+            path.unlink()
 
 
 @dataclass
@@ -95,7 +108,7 @@ class ModelGenerator:
             value = schema.get('additionalProperties', {})
             annotation = 'dict[str, ' + (self.annotation(value, name + 'Value') if isinstance(value, dict) else 'Any') + ']'
         else:
-            annotation = {'string': 'bytes' if schema.get('format') == 'binary' else 'str', 'file': 'bytes', 'integer': 'int', 'number': 'float', 'boolean': 'bool'}.get(schema.get('type', ''), 'Any')
+            annotation = primitive_annotation(schema)
         if schema.get('x-nullable') and annotation != 'Any':
             annotation += ' | None'
         return annotation
@@ -173,3 +186,4 @@ class ModelGenerator:
         init += f'_bind_model_namespace(__name__, {[module for module, _ in all_exports]!r}, __all__)\n'
 
         (output / '__init__.py').write_text(init)
+        prune_generated_modules(output, {module for module, _ in all_exports} | {'__init__'})

@@ -96,18 +96,22 @@ class ModelGenerationTests(unittest.TestCase):
             }},
         }
         schemas = SchemaDiscovery(spec).collect()
-        self.assertEqual(schemas['ListTestQueryLimit']['type'], 'integer')
-        self.assertEqual(schemas['CreateTestQueryLimit']['type'], 'string')
+        self.assertNotIn('ListTestQueryLimit', schemas)
+        self.assertNotIn('CreateTestQueryLimit', schemas)
         self.assertIn('CreateTestRequest', schemas)
         self.assertIn('ListTestResponse200', schemas)
-        self.assertEqual(schemas['ListTestResponse200HeaderXNext']['type'], 'string')
+        self.assertNotIn('ListTestResponse200HeaderXNext', schemas)
 
     def test_inline_request_response_and_parameter_types(self):
         from docker_python.versions.v_1_44.models import (
-            ContainerCreateRequest, ContainerTopResponse200, ContainerListQueryAll,
+            ContainerCreateRequest, ContainerTopResponse200,
             HostConfig, MountType,
         )
-        self.assertEqual(ContainerListQueryAll, bool)
+        from docker_python.versions.v_1_44 import models
+        from docker_python.versions.v_1_44.commands import ContainerListCommand
+        from docker_python.core.parameters import Unset
+        self.assertFalse(hasattr(models, 'ContainerListQueryAll'))
+        self.assertEqual(get_type_hints(ContainerListCommand)['all'], bool | Unset)
         self.assertEqual(ContainerCreateRequest.__name__, 'ContainerCreateRequest')
         self.assertIn('memory', get_type_hints(HostConfig))
         request = ContainerCreateRequest.from_wire({
