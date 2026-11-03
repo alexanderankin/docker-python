@@ -30,6 +30,9 @@ Parameter = TypedDict('Parameter', {
     'type': str,
     'items': Schema,
     'description': str,
+    'collectionFormat': str,
+    'enum': list[str | int | float | bool | None],
+    'format': str,
 }, total=False)
 
 
@@ -43,6 +46,10 @@ class Operation(TypedDict):
     operationId: str
     parameters: NotRequired[list[Parameter]]
     responses: dict[str, Response]
+    consumes: NotRequired[list[str]]
+    produces: NotRequired[list[str]]
+    summary: NotRequired[str]
+    description: NotRequired[str]
 
 
 PathItem = TypedDict('PathItem', {
@@ -71,6 +78,8 @@ class Swagger(TypedDict):
     parameters: NotRequired[dict[str, Parameter]]
     responses: NotRequired[dict[str, Response]]
     basePath: NotRequired[str]
+    consumes: NotRequired[list[str]]
+    produces: NotRequired[list[str]]
 
 
 def load_spec(path: Path) -> Swagger:

@@ -95,7 +95,7 @@ class ModelGenerator:
             value = schema.get('additionalProperties', {})
             annotation = 'dict[str, ' + (self.annotation(value, name + 'Value') if isinstance(value, dict) else 'Any') + ']'
         else:
-            annotation = {'string': 'str', 'integer': 'int', 'number': 'float', 'boolean': 'bool'}.get(schema.get('type', ''), 'Any')
+            annotation = {'string': 'bytes' if schema.get('format') == 'binary' else 'str', 'file': 'bytes', 'integer': 'int', 'number': 'float', 'boolean': 'bool'}.get(schema.get('type', ''), 'Any')
         if schema.get('x-nullable') and annotation != 'Any':
             annotation += ' | None'
         return annotation

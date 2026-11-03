@@ -69,3 +69,9 @@ def bind_model_namespace(package_name: str, modules: list[str], exports: list[st
     namespace = {name: getattr(package, name) for name in exports}
     for module in modules:
         vars(import_module(f'{package_name}.{module}')).update(namespace)
+
+
+def bind_model_types(package_name: str, namespace: dict[str, Any]) -> None:
+    """Expose alias targets to annotation consumers in commands and clients."""
+    package = import_module(package_name)
+    namespace.update({name: getattr(package, name) for name in package.__all__})
