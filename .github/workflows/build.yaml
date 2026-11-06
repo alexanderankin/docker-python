@@ -26,15 +26,9 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: "${{ matrix.python_version }}"
-      - uses: actions/cache@v4
-        id: cache-venv
-        with: &cache-venv
-          path: .venv
-          key: venv-${{ runner.os }}-py${{ matrix.python_version }}-${{ hashFiles('**/pyproject.toml') }}
-          restore-keys: |
-            venv-${{ runner.os }}-py${{ steps.setup-python.outputs.python-version }}-
-      - if: steps.cache-venv.outputs.cache-hit != 'true'
-        run: |
+      - run: python .github/scripts/sync_dependencies.py --check
+      - run: python -m unittest discover -s .github/scripts -p 'test_*.py'
+      - run: |
           python -m venv .venv
           source .venv/bin/activate
           pip install --upgrade pip
@@ -90,6 +84,32 @@ jobs:
         with:
           # token: ${{ steps.app-token.outputs.token }}
           token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+      - uses: actions/checkout@v7
+        with:
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+          fetch-depth: 0
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.14'
+      - name: Synchronize dependencies on release PRs
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          gh pr list --state open --base main --label 'autorelease: pending' \
+            --json headRefName --jq '.[].headRefName' > "$RUNNER_TEMP/release-branches"
+          while IFS= read -r branch; do
+            [[ "$branch" == release-please--* ]] || continue
+            git fetch origin "$branch"
+            git checkout --detach FETCH_HEAD
+            python .github/scripts/sync_dependencies.py
+            git add -- '*/pyproject.toml' 'versions/*/pyproject.toml'
+            if ! git diff --cached --quiet; then
+              git commit -m 'chore: synchronize internal dependency versions'
+              git push origin "HEAD:refs/heads/$branch"
+            fi
+          done < "$RUNNER_TEMP/release-branches"
   publish:
     needs:
       - build
@@ -105,10 +125,10 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: 3.14
-      - uses: actions/cache@v4
-        id: cache-venv
-        with: *cache-venv
-      - run: . .venv/bin/activate; pip install --upgrade pip build
+      - run: |
+          python -m venv .venv
+          . .venv/bin/activate
+          pip install --upgrade pip build
       - run: |
           . .venv/bin/activate
           mkdir -p dist
