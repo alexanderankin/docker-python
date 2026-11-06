@@ -14,6 +14,11 @@ dependencies = [
     "docker-python-requests==0.1.0",
 ]
 
+[dependency-groups]
+test = ["pytest>=8.0", "pytest-cov"]
+lint = ["ruff"]
+dev = [{ include-group = "test" }, { include-group = "lint" }]
+
 [project.scripts]
 docker-python-example = "docker_python_examples.cli:main"
 

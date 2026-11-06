@@ -6,7 +6,15 @@ build-backend = "setuptools.build_meta"
 name = "docker-python-generator"
 version = "0.1.0"
 requires-python = ">=3.11"
-dependencies = ['docker-python-core==0.1.0', 'PyYAML>=6']
+dependencies = [
+    'docker-python-core==0.1.0',
+    'PyYAML>=6',
+]
+
+[dependency-groups]
+test = ["pytest>=8.0", "pytest-cov"]
+lint = ["ruff"]
+dev = [{ include-group = "test" }, { include-group = "lint" }]
 
 [tool.setuptools.packages.find]
 where = ["src"]
