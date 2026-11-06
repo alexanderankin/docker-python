@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "docker-python-v-1-40"
 version = "0.1.0"
 requires-python = ">=3.11"
-dependencies = ['docker-python-core==0.1.0']
+dependencies = ['docker-python-core==0.2.0']
 
 [dependency-groups]
 test = ["pytest>=8.0", "pytest-cov"]
