@@ -1,30 +1,26 @@
 {
   "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
-  "release-type": "python",
-  "skip-changelog": true,
-  "bump-minor-pre-major": true,
-  "separate-pull-requests": true,
-  "include-component-in-tag": true,
-  "tag-separator": "/",
   "packages": {
     ".": {
-      "component": "generation",
-      "exclude-paths": ["core", "docker-python-requests", "examples", ".github"],
+      "release-type": "simple",
+      "version-file": "version.txt",
+      "initial-version": "0.2.0",
+      "versioning": "default",
+      "bump-minor-pre-major": true,
+      "include-component-in-tag": false,
+      "skip-changelog": true,
       "extra-files": [
         {
-          "type": "toml",
-          "path": "generator/pyproject.toml",
-          "jsonpath": "$.project.version"
+          "type": "generic",
+          "path": "*/pyproject.toml",
+          "glob": true
         },
         {
-          "type": "toml",
+          "type": "generic",
           "path": "versions/*/pyproject.toml",
-          "glob": true,
-          "jsonpath": "$.project.version"
+          "glob": true
         }
       ]
-    },
-    "core": { "component": "core" },
-    "docker-python-requests": { "component": "requests" }
+    }
   }
 }

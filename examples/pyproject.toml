@@ -4,14 +4,14 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "docker-python-examples"
-version = "0.1.0"
+version = "0.2.0" # x-release-please-version
 requires-python = ">=3.11"
 dependencies = [
-    "docker-python-core==0.2.0",
-    "docker-python-v-1-40==0.1.0",
-    "docker-python-v-1-44==0.1.0",
-    "docker-python-v-1-55==0.1.0",
-    "docker-python-requests==0.1.0",
+    "docker-python-core==0.2.0", # x-release-please-version
+    "docker-python-v-1-40==0.2.0", # x-release-please-version
+    "docker-python-v-1-44==0.2.0", # x-release-please-version
+    "docker-python-v-1-55==0.2.0", # x-release-please-version
+    "docker-python-requests==0.2.0", # x-release-please-version
 ]
 
 [dependency-groups]
