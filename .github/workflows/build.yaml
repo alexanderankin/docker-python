@@ -28,12 +28,11 @@ jobs:
           python-version: "${{ matrix.python_version }}"
       - uses: actions/cache@v4
         id: cache-venv
-        with:
+        with: &cache-venv
           path: .venv
           key: venv-${{ runner.os }}-py${{ matrix.python_version }}-${{ hashFiles('**/pyproject.toml') }}
           restore-keys: |
             venv-${{ runner.os }}-py${{ steps.setup-python.outputs.python-version }}-
-
       - if: steps.cache-venv.outputs.cache-hit != 'true'
         run: |
           python -m venv .venv
@@ -57,6 +56,7 @@ jobs:
           pip install ./examples/; pip install --group ./examples/pyproject.toml:dev
           python -c "import docker_python_examples"
       - run: |
+          source .venv/bin/activate
           # generator "itest":
           python -m docker_python_generator ./docker-engine-api-specs/v1.40.yaml ./versions/v1.40
           python -m docker_python_generator ./docker-engine-api-specs/v1.44.yaml ./versions/v1.44
@@ -105,8 +105,12 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: 3.14
-      - run: pip install --upgrade pip build
+      - uses: actions/cache@v4
+        id: cache-venv
+        with: *cache-venv
+      - run: . .venv/bin/activate; pip install --upgrade pip build
       - run: |
+          . .venv/bin/activate
           mkdir -p dist
           python -m build ./core/ --wheel -o ./dist
           python -m build ./docker-python-requests/ --wheel -o ./dist
