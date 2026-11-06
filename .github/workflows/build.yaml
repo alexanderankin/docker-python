@@ -26,8 +26,6 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: "${{ matrix.python_version }}"
-      - run: python .github/scripts/sync_dependencies.py --check
-      - run: python -m unittest discover -s .github/scripts -p 'test_*.py'
       - run: |
           python -m venv .venv
           source .venv/bin/activate
@@ -74,48 +72,19 @@ jobs:
       group: release-please
       cancel-in-progress: false
     steps:
-      # - uses: actions/create-github-app-token@v3
-      #   id: app-token
-      #   with:
-      #     client-id: ${{ secrets.BOT_CLIENT_ID }}
-      #     private-key: ${{ secrets.BOT_PRIVATE_KEY }}
       - uses: googleapis/release-please-action@v5
         id: release
         with:
-          # token: ${{ steps.app-token.outputs.token }}
           token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
-      - uses: actions/checkout@v7
-        with:
-          token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
-          fetch-depth: 0
-      - uses: actions/setup-python@v7
-        with:
-          python-version: '3.14'
-      - name: Synchronize dependencies on release PRs
-        env:
-          GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
-        run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          gh pr list --state open --base main --label 'autorelease: pending' \
-            --json headRefName --jq '.[].headRefName' > "$RUNNER_TEMP/release-branches"
-          while IFS= read -r branch; do
-            [[ "$branch" == release-please--* ]] || continue
-            git fetch origin "$branch"
-            git checkout --detach FETCH_HEAD
-            python .github/scripts/sync_dependencies.py
-            git add -- '*/pyproject.toml' 'versions/*/pyproject.toml'
-            if ! git diff --cached --quiet; then
-              git commit -m 'chore: synchronize internal dependency versions'
-              git push origin "HEAD:refs/heads/$branch"
-            fi
-          done < "$RUNNER_TEMP/release-branches"
+
   publish:
     needs:
       - build
       - release_please
     if: needs.release_please.outputs.release_created == 'true'
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     env:
       RELEASE_TAG: ${{ needs.release_please.outputs.tag_name }}
     steps:
@@ -132,11 +101,14 @@ jobs:
       - run: |
           . .venv/bin/activate
           mkdir -p dist
+          pip install ./core/ ./generator/
           python -m build ./core/ --wheel -o ./dist
           python -m build ./docker-python-requests/ --wheel -o ./dist
-          python -m build ./versions/v1.40/ --wheel -o ./dist
-          python -m build ./versions/v1.44/ --wheel -o ./dist
-          python -m build ./versions/v1.55/ --wheel -o ./dist
+          for package in ./versions/*/; do
+            version=$(basename "$package")
+            python -m docker_python_generator "./docker-engine-api-specs/$version.yaml" "$package"
+            python -m build "$package" --wheel -o ./dist
+          done
       - uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ env.RELEASE_TAG }}

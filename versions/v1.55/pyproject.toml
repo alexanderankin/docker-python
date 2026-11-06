@@ -4,9 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "docker-python-v-1-55"
-version = "0.1.0"
+version = "0.2.0" # x-release-please-version
 requires-python = ">=3.11"
-dependencies = ['docker-python-core==0.2.0']
+dependencies = [
+    'docker-python-core==0.2.0', # x-release-please-version
+]
 
 [dependency-groups]
 test = ["pytest>=8.0", "pytest-cov"]
