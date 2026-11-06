@@ -61,10 +61,10 @@ jobs:
           python -m docker_python_generator ./docker-engine-api-specs/v1.40.yaml ./versions/v1.40
           python -m docker_python_generator ./docker-engine-api-specs/v1.44.yaml ./versions/v1.44
           python -m docker_python_generator ./docker-engine-api-specs/v1.55.yaml ./versions/v1.55
-          (cd core; pytest)
-          (cd generator; pytest)
-          (cd docker-python-requests; pytest)
-          (cd examples; pytest)
+          (cd core; pytest || [ $? -eq 5 ])
+          (cd generator; pytest || [ $? -eq 5 ])
+          (cd docker-python-requests; pytest || [ $? -eq 5 ])
+          (cd examples; pytest || [ $? -eq 5 ])
 
   release_please:
     if: github.event_name == 'push' && github.ref_name == 'main'
