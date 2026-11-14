@@ -1,0 +1,7 @@
+[fields."ContainerConfig.ExposedPorts"]
+type = "ExposedPorts"
+source = "docker_python_generator.custom.exposed_ports.ExposedPortsCustomization"
+
+[fields."ImageConfig.ExposedPorts"]
+type = "ExposedPorts"
+source = "docker_python_generator.custom.exposed_ports.ExposedPortsCustomization"

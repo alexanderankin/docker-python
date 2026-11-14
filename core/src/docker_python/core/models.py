@@ -5,6 +5,8 @@ from importlib import import_module
 from types import UnionType
 from typing import Any, ForwardRef, Union, get_args, get_origin, get_type_hints
 
+from .json import CREATOR, VALUE, json_method
+
 
 class Model:
     @classmethod
@@ -37,6 +39,9 @@ def from_wire(annotation: Any, value: Any) -> Any:
     if origin is dict:
         return {key: from_wire(args[1], item) for key, item in value.items()}
     if isinstance(annotation, type):
+        creator = json_method(annotation, CREATOR)
+        if creator is not None:
+            return getattr(annotation, creator)(value)
         if issubclass(annotation, Model):
             return annotation.from_wire(value)
         if issubclass(annotation, Enum):
@@ -45,6 +50,10 @@ def from_wire(annotation: Any, value: Any) -> Any:
 
 
 def to_wire(value: Any) -> Any:
+    if not isinstance(value, type):
+        method = json_method(type(value), VALUE)
+        if method is not None:
+            return to_wire(getattr(value, method)())
     if isinstance(value, Enum):
         return value.value
     if is_dataclass(value) and not isinstance(value, type):

@@ -16,3 +16,7 @@ clean:
 .PHONY: regenerate
 regenerate: clean
 	$(MAKE) -f "$(CURDIR)/Makefile" generate
+
+.PHONY: format
+format:
+	$(UV) run ruff format

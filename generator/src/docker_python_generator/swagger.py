@@ -1,39 +1,54 @@
 """The Swagger 2.0 shapes consumed by the prototype generator."""
+
 from pathlib import Path
-from typing import Any, NotRequired, TypedDict, cast
+from typing import Any, Final, NotRequired, TypedDict, cast
 
 import yaml
 
 
-Schema = TypedDict('Schema', {
-    '$ref': str,
-    'type': str,
-    'format': str,
-    'description': str,
-    'properties': dict[str, 'Schema'],
-    'required': list[str],
-    'items': 'Schema',
-    'additionalProperties': 'Schema | bool',
-    'allOf': list['Schema'],
-    'enum': list[str | int | float | bool | None],
-    'default': Any,
-    'x-nullable': bool,
-}, total=False)
+# Internal generator annotations added to a copy of the input Swagger schema.
+PYTHON_TYPE: Final = "x-python-type"
+PYTHON_MODULE: Final = "x-python-module"
 
 
-Parameter = TypedDict('Parameter', {
-    '$ref': str,
-    'name': str,
-    'in': str,
-    'required': bool,
-    'schema': Schema,
-    'type': str,
-    'items': Schema,
-    'description': str,
-    'collectionFormat': str,
-    'enum': list[str | int | float | bool | None],
-    'format': str,
-}, total=False)
+Schema = TypedDict(
+    "Schema",
+    {
+        "x-python-type": str,
+        "x-python-module": str,
+        "$ref": str,
+        "type": str,
+        "format": str,
+        "description": str,
+        "properties": dict[str, "Schema"],
+        "required": list[str],
+        "items": "Schema",
+        "additionalProperties": "Schema | bool",
+        "allOf": list["Schema"],
+        "enum": list[str | int | float | bool | None],
+        "default": Any,
+        "x-nullable": bool,
+    },
+    total=False,
+)
+
+Parameter = TypedDict(
+    "Parameter",
+    {
+        "$ref": str,
+        "name": str,
+        "in": str,
+        "required": bool,
+        "schema": Schema,
+        "type": str,
+        "items": Schema,
+        "description": str,
+        "collectionFormat": str,
+        "enum": list[str | int | float | bool | None],
+        "format": str,
+    },
+    total=False,
+)
 
 
 class Response(TypedDict, total=False):
@@ -52,17 +67,21 @@ class Operation(TypedDict):
     description: NotRequired[str]
 
 
-PathItem = TypedDict('PathItem', {
-    '$ref': str,
-    'parameters': list[Parameter],
-    'get': Operation,
-    'put': Operation,
-    'post': Operation,
-    'delete': Operation,
-    'options': Operation,
-    'head': Operation,
-    'patch': Operation,
-}, total=False)
+PathItem = TypedDict(
+    "PathItem",
+    {
+        "$ref": str,
+        "parameters": list[Parameter],
+        "get": Operation,
+        "put": Operation,
+        "post": Operation,
+        "delete": Operation,
+        "options": Operation,
+        "head": Operation,
+        "patch": Operation,
+    },
+    total=False,
+)
 
 
 class Info(TypedDict):
@@ -84,9 +103,9 @@ class Swagger(TypedDict):
 
 def load_spec(path: Path) -> Swagger:
     data = yaml.safe_load(path.read_text())
-    if not isinstance(data, dict) or data.get('swagger') != '2.0':
-        raise ValueError('Expected a Swagger 2.0 document')
-    for key in ('info', 'definitions', 'paths'):
+    if not isinstance(data, dict) or data.get("swagger") != "2.0":
+        raise ValueError("Expected a Swagger 2.0 document")
+    for key in ("info", "definitions", "paths"):
         if not isinstance(data.get(key), dict):
-            raise ValueError(f'Missing Swagger mapping: {key}')
+            raise ValueError(f"Missing Swagger mapping: {key}")
     return cast(Swagger, data)
