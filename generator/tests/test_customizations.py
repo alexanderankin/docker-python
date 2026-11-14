@@ -7,7 +7,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import get_type_hints
 
-from docker_python_generator.custom.exposed_ports import ExposedPortsCustomization
+from docker_python_generator.custom.model_parsers import ExposedPortsCustomization
 from docker_python_generator.customizations import (
     RuntimeModule,
     SchemaContext,
@@ -16,7 +16,7 @@ from docker_python_generator.customizations import (
 from docker_python_generator.swagger import PYTHON_TYPE, load_spec
 
 ROOT = Path(__file__).resolve().parents[2]
-SOURCE = "docker_python_generator.custom.exposed_ports.ExposedPortsCustomization"
+SOURCE = "docker_python_generator.custom.model_parsers.ExposedPortsCustomization"
 
 
 @dataclass(frozen=True)

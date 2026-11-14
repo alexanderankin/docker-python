@@ -5,10 +5,11 @@ from typing import Any, Final, NotRequired, TypedDict, cast
 
 import yaml
 
-
 # Internal generator annotations added to a copy of the input Swagger schema.
 PYTHON_TYPE: Final = "x-python-type"
 PYTHON_MODULE: Final = "x-python-module"
+PYTHON_NAME: Final = "x-python-name"
+PYTHON_MIXIN: Final = "x-python-mixin"
 
 
 Schema = TypedDict(
@@ -16,6 +17,8 @@ Schema = TypedDict(
     {
         "x-python-type": str,
         "x-python-module": str,
+        "x-python-name": str,
+        "x-python-mixin": str,
         "$ref": str,
         "type": str,
         "format": str,

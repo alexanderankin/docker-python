@@ -1,12 +1,12 @@
 """Walk Swagger operations once, resolving shared parameters and responses."""
 
 import re
-from collections.abc import Iterator
+from collections.abc import Iterator, Mapping
 from dataclasses import dataclass
-from typing import Any, Mapping, TypeVar, cast
+from typing import Any, TypeVar, cast
 
 from .models import class_name, primitive_annotation
-from .swagger import PYTHON_TYPE, Operation, Parameter, Response, Schema, Swagger
+from .swagger import PYTHON_NAME, PYTHON_TYPE, Operation, Parameter, Response, Schema, Swagger
 
 HTTP_METHODS = {"get", "put", "post", "delete", "options", "head", "patch"}
 
@@ -120,7 +120,9 @@ class SchemaDiscovery:
         if PYTHON_TYPE in schema:
             annotation = "models." + schema[PYTHON_TYPE]
         elif "$ref" in schema:
-            annotation = "models." + class_name(self.reference_name(schema))
+            reference = self.reference_name(schema)
+            target = self.spec["definitions"][reference]
+            annotation = "models." + class_name(target.get(PYTHON_TYPE, target.get(PYTHON_NAME, reference)))
         elif schema.get("enum") or "properties" in schema or "allOf" in schema:
             annotation = "models." + class_name(name)
         elif schema.get("type") == "array":

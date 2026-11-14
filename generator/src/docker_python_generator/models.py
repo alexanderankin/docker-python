@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from .customizations import RuntimeModule
-from .swagger import PYTHON_MODULE, PYTHON_TYPE, Schema
+from .swagger import PYTHON_MIXIN, PYTHON_MODULE, PYTHON_NAME, PYTHON_TYPE, Schema
 
 GENERATED = "# Generated from Docker Engine Swagger; regenerate via docker_python_generator.\n"
 
@@ -108,8 +108,12 @@ class ModelGenerator:
             ref = schema["$ref"].removeprefix("#/definitions/")
             if ref not in self.definitions:
                 raise ValueError(f"Unknown definition: {ref}")
-            self.references.add(ref)
-            annotation = class_name(ref)
+            target = self.definitions[ref]
+            if PYTHON_TYPE in target:
+                return self.annotation(target, name)
+            public_name = target.get(PYTHON_NAME, ref)
+            self.references.add(public_name)
+            annotation = class_name(public_name)
         elif schema.get("enum"):
             self.emit_enum(name, schema)
             annotation = name
@@ -152,7 +156,12 @@ class ModelGenerator:
         self.exports.append(name)
 
     def emit_object(self, name: str, schema: Schema) -> None:
-        lines = ["@dataclass(kw_only=True)", f"class {name}(Model):"]
+        bases = "Model"
+        if PYTHON_MIXIN in schema:
+            mixin = schema[PYTHON_MIXIN]
+            self.custom_imports.add((schema[PYTHON_MODULE], mixin))
+            bases = f"{mixin}, Model"
+        lines = ["@dataclass(kw_only=True)", f"class {name}({bases}):"]
         required = set(schema.get("required", []))
         used: set[str] = set()
         for wire, prop in schema.get("properties", {}).items():
@@ -175,14 +184,21 @@ class ModelGenerator:
         output.mkdir(parents=True, exist_ok=True)
         all_exports: list[tuple[str, list[str]]] = []
         for module in self.runtime_modules:
-            if module.name in {snake(name) for name in self.definitions}:
+            if module.name in {
+                snake(schema.get(PYTHON_NAME, name))
+                for name, schema in self.definitions.items()
+                if PYTHON_TYPE not in schema
+            }:
                 raise ValueError(f"Custom module collides with generated model: {module.name}")
             (output / (module.name + ".py")).write_text(GENERATED + module.source.read_text())
             all_exports.append((module.name, list(module.exports)))
         for name, schema in self.definitions.items():
+            if PYTHON_TYPE in schema:
+                continue
+            public_name = schema.get(PYTHON_NAME, name)
             self.blocks, self.exports, self.references = [], [], set()
             self.custom_imports = set()
-            symbol = class_name(name)
+            symbol = class_name(public_name)
             self.current_model = name
             annotation = self.annotation(schema, symbol)
             is_alias = symbol not in self.exports
@@ -209,8 +225,8 @@ class ModelGenerator:
                 imports.extend(["", "if TYPE_CHECKING:"])
                 imports.extend(f"    from .{snake(ref)} import {class_name(ref)}" for ref in sorted(self.references))
             text = "\n".join(imports) + "\n\n\n" + "\n\n\n".join(self.blocks) + "\n"
-            (output / (snake(name) + ".py")).write_text(text)
-            all_exports.append((snake(name), list(self.exports)))
+            (output / (snake(public_name) + ".py")).write_text(text)
+            all_exports.append((snake(public_name), list(self.exports)))
         exports = [symbol for _, symbols in all_exports for symbol in symbols]
         if len(exports) != len(set(exports)):
             raise ValueError("Generated model names collide")

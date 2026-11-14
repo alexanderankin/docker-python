@@ -8,10 +8,11 @@ from typing import get_type_hints
 
 from docker_python.core import Response
 from docker_python.core.models import from_wire
+
 from docker_python_generator.customizations import apply_customizations
 from docker_python_generator.discovery import SchemaDiscovery
 from docker_python_generator.models import ModelGenerator, snake
-from docker_python_generator.swagger import load_spec
+from docker_python_generator.swagger import PYTHON_NAME, PYTHON_TYPE, load_spec
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -28,15 +29,18 @@ class ModelGenerationTests(unittest.TestCase):
                 ModelGenerator(schemas, customized.runtime_modules).generate(output)
                 self.assertEqual(
                     len(list(output.glob("*.py"))),
-                    len(schemas) + len(customized.runtime_modules) + 1,
+                    sum(PYTHON_TYPE not in schema for schema in schemas.values()) + len(customized.runtime_modules) + 1,
                 )
                 sys.path.insert(0, temp)
                 try:
                     invalidate_caches()
                     models = import_module(package)
-                    for name in schemas:
-                        module = import_module(package + "." + snake(name))
-                        self.assertIs(getattr(models, name), getattr(module, name))
+                    for name, schema in schemas.items():
+                        public_name = schema.get(PYTHON_TYPE, schema.get(PYTHON_NAME, name))
+                        self.assertTrue(hasattr(models, public_name))
+                        if PYTHON_TYPE not in schema:
+                            module = import_module(package + "." + snake(public_name))
+                            self.assertIs(getattr(models, public_name), getattr(module, public_name))
                     for name in models.__all__:
                         cls = getattr(models, name)
                         if isinstance(cls, type) and is_dataclass(cls):
@@ -160,11 +164,12 @@ class ModelGenerationTests(unittest.TestCase):
 
     def test_nested_models_enums_aliases_and_wire_names(self):
         from docker_python.versions.v_1_44.models import (
+            Binding,
             ContainerConfig,
+            ExposedPort,
             HostConfig,
             Mount,
             MountType,
-            PortBinding,
             SystemVersion,
         )
 
@@ -182,7 +187,7 @@ class ModelGenerationTests(unittest.TestCase):
         self.assertEqual(config.image, "alpine")
         self.assertIsInstance(host.mounts[0], Mount)
         self.assertIs(host.mounts[0].type, MountType.BIND)
-        self.assertIsInstance(host.port_bindings["80/tcp"][0], PortBinding)
+        self.assertIsInstance(host.port_bindings.bindings[ExposedPort(80)][0], Binding)
         self.assertEqual(host.to_wire(), payload["HostConfig"])
         version = SystemVersion.from_wire({"Platform": {"Name": "Docker Engine"}, "ApiVersion": "1.44"})
         self.assertEqual(version.platform.name, "Docker Engine")

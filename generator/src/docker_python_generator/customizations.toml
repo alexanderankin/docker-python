@@ -1,7 +1,50 @@
 [fields."ContainerConfig.ExposedPorts"]
 type = "ExposedPorts"
-source = "docker_python_generator.custom.exposed_ports.ExposedPortsCustomization"
+source = "docker_python_generator.custom.model_parsers.ExposedPortsCustomization"
 
 [fields."ImageConfig.ExposedPorts"]
 type = "ExposedPorts"
-source = "docker_python_generator.custom.exposed_ports.ExposedPortsCustomization"
+source = "docker_python_generator.custom.model_parsers.ExposedPortsCustomization"
+
+[fields."ContainerConfig.Volumes"]
+type = "Volumes"
+source = "docker_python_generator.custom.model_parsers.VolumesCustomization"
+
+[fields."ImageConfig.Volumes"]
+type = "Volumes"
+source = "docker_python_generator.custom.model_parsers.VolumesCustomization"
+
+[fields."HostConfig.Binds"]
+type = "Binds"
+source = "docker_python_generator.custom.model_parsers.StringListCustomization"
+
+[fields."HostConfig.Links"]
+type = "Links"
+source = "docker_python_generator.custom.model_parsers.StringListCustomization"
+
+[fields."HostConfig.VolumesFrom"]
+type = "VolumesFrom"
+items = true
+source = "docker_python_generator.custom.model_parsers.StringCustomization"
+
+[definitions."PortBinding"]
+type = "Binding"
+mixin = "BindingParsingMixin"
+source = "docker_python_generator.custom.model_parsers.BindingCustomization"
+
+[definitions."PortMap"]
+type = "Ports"
+source = "docker_python_generator.custom.model_parsers.PortsCustomization"
+
+[definitions."DeviceMapping"]
+type = "Device"
+mixin = "DeviceParsingMixin"
+source = "docker_python_generator.custom.model_parsers.DeviceCustomization"
+
+[definitions."RestartPolicy"]
+type = "RestartPolicy"
+mixin = "RestartPolicyParsingMixin"
+source = "docker_python_generator.custom.model_parsers.RestartPolicyCustomization"
+
+[definitions."Volume"]
+type = "InspectVolumeResponse"
