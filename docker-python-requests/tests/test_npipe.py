@@ -79,11 +79,11 @@ class NamedPipeTests(unittest.TestCase):
             pipe = PipeSocket("\\\\.\\pipe\\docker_engine", 0.25)
             self.assertEqual(pipe.recv(4), b"data")
             pipe.sendall(b"data")
-            event.WaitForSingleObject.assert_called_with(event.CreateEvent.return_value, 250)
+            event.WaitForSingleObject.assert_called_with(event.CreateEvent.return_value.handle, 250)
             event.WaitForSingleObject.return_value = 258
             with self.assertRaises(socket.timeout):
                 pipe.recv(4)
-            file.CancelIoEx.assert_called_once()
+            file.CancelIo.assert_called_once()
             file.ReadFile.side_effect = WindowsError()
             self.assertEqual(pipe.recv(4), b"")
             pipe.close()
