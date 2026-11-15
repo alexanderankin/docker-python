@@ -20,14 +20,14 @@ class _PipeReader(io.RawIOBase):
 
     def readinto(self, buffer):
         data = self.pipe.recv(len(buffer))
-        buffer[:len(data)] = data
+        buffer[: len(data)] = data
         return len(data)
 
 
 class PipeSocket:
     def __init__(self, path: Path, timeout):
-        if sys.platform != 'win32':
-            raise OSError('Docker named pipes require Windows')
+        if sys.platform != "win32":
+            raise OSError("Docker named pipes require Windows")
         import pywintypes
         import win32event
         import win32file
@@ -38,7 +38,13 @@ class PipeSocket:
         self.timeout = timeout
         try:
             self.handle = win32file.CreateFile(
-                path, 0xC0000000, 0, None, 3, 0x40000000, None,
+                path,
+                0xC0000000,
+                0,
+                None,
+                3,
+                0x40000000,
+                None,
             )
         except pywintypes.error as error:
             raise OSError(error.winerror, error.strerror) from error
@@ -56,8 +62,9 @@ class PipeSocket:
                 else:
                     status, _ = self._file.WriteFile(self.handle, data, operation)
                 if status == 997:  # ERROR_IO_PENDING
-                    milliseconds = 0xFFFFFFFF if self.timeout is None else min(math.ceil(self.timeout * 1000),
-                                                                               0xFFFFFFFE)
+                    milliseconds = (
+                        0xFFFFFFFF if self.timeout is None else min(math.ceil(self.timeout * 1000), 0xFFFFFFFE)
+                    )
                     if self._event.WaitForSingleObject(operation.hEvent, milliseconds) == 258:
                         self._file.CancelIoEx(self.handle, operation)
                         # Keep the buffer and OVERLAPPED alive until cancellation completes.
@@ -65,12 +72,12 @@ class PipeSocket:
                             self._file.GetOverlappedResult(self.handle, operation, True)
                         except self._types.error:
                             pass
-                        raise TimeoutError('Docker named pipe operation timed out')
+                        raise TimeoutError("Docker named pipe operation timed out")
                 count = self._file.GetOverlappedResult(self.handle, operation, True)
                 return bytes(buffer[:count]) if read else count
             except self._types.error as error:
                 if read and error.winerror in (109, 232, 233):
-                    return b''
+                    return b""
                 raise OSError(error.winerror, error.strerror) from error
         finally:
             operation.hEvent.Close()
@@ -83,7 +90,7 @@ class PipeSocket:
         while remaining:
             count = self._io(remaining, read=False)
             if not count:
-                raise OSError('Docker named pipe closed while writing')
+                raise OSError("Docker named pipe closed while writing")
             remaining = remaining[count:]
 
     def makefile(self, mode, buffering=None):
@@ -117,7 +124,7 @@ class PipeConnectionPool(HTTPConnectionPool):
 class NamedPipeAdapter(HTTPAdapter):
     def __init__(self, pipe_path, **kwargs):
         super().__init__(**kwargs)
-        self.pipe_pool = PipeConnectionPool('localhost', pipe_path=pipe_path)
+        self.pipe_pool = PipeConnectionPool("localhost", pipe_path=pipe_path)
 
     def get_connection(self, url, proxies=None):
         return self.pipe_pool
