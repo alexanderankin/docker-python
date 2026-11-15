@@ -23,6 +23,18 @@ TOX_ARGS ?=
 test: .venv/.installed
 	$(ACTIVATE); pytest --ignore=itests --durations=10
 
+ty: .venv/.installed
+	$(ACTIVATE); ty check \
+		--exclude '**/tests/**' \
+		--exclude 'itests/**' \
+		--extra-search-path core/src \
+		--extra-search-path generator/src \
+		--extra-search-path docker-python-requests/src \
+		--extra-search-path versions/v1.40/src \
+		--extra-search-path versions/v1.44/src \
+		--extra-search-path versions/v1.55/src \
+		--extra-search-path examples/src
+
 integration-test: .venv/.installed
 	$(ACTIVATE); pip install ./itests/ --group './itests/pyproject.toml:test'
 	$(ACTIVATE); python -m pytest itests -v --durations=10
