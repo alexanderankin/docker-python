@@ -23,6 +23,9 @@ def main() -> None:
     module = args.output / "src" / "docker_python" / "versions" / ("v_" + version.replace(".", "_"))
     ModelGenerator(SchemaDiscovery(spec).collect(), customization.runtime_modules).generate(module / "models")
     CommandGenerator(spec).generate(module)
+    (module / "py.typed").touch(exist_ok=True)
+    (module / "models" / "py.typed").touch(exist_ok=True)
+    (module / "commands" / "py.typed").touch(exist_ok=True)
 
 
 if __name__ == "__main__":

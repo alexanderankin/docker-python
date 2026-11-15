@@ -10,10 +10,13 @@ dependencies = []
 
 [dependency-groups]
 test = ["pytest>=8.0", "pytest-cov"]
-lint = ["ruff"]
+lint = ["ruff", "ty"]
 dev = [{ include-group = "test" }, { include-group = "lint" }]
 
 [tool.setuptools.packages.find]
 where = ["src"]
 include = ["docker_python.*"]
 namespaces = true
+
+[tool.ruff]
+line-length = 120

@@ -10,6 +10,8 @@ from requests.exceptions import RequestException
 
 
 def main() -> int:
+    import os
+    os.environ["DOCKER_HOST"] = "npipe:////./pipe/docker_engine"
     logging.basicConfig(level=logging.INFO, format='%(message)s')
     argument_parser = parser('List images using Docker API 1.44.')
     argument_parser.add_argument('--all', action='store_true', help='Include intermediate images')

@@ -1,10 +1,12 @@
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
-from threading import Thread
 import unittest
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from threading import Thread
+from typing import Any
 from urllib.parse import parse_qs, urlsplit
 
 from docker_python.core import Request
+
 from docker_python.transports.requests import RequestsTransport
 
 
@@ -38,7 +40,8 @@ class TransportTests(unittest.TestCase):
             do_POST = handle_request
             do_HEAD = handle_request
 
-            def log_message(self, *args):
+            # noinspection shadowing-builtins
+            def log_message(self, format: str, *args: Any):
                 pass
 
         cls.server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
@@ -67,7 +70,10 @@ class TransportTests(unittest.TestCase):
                     "all": True,
                     "filters": {"status": ["running"]},
                 },
-                headers={"Content-Type": "application/x-tar", "X-Registry-Auth": "test-auth"},
+                headers={
+                    "Content-Type": "application/x-tar",
+                    "X-Registry-Auth": "test-auth",
+                },
                 body=b"\x00\xffarchive",
                 query_formats={"changes": "multi", "platform": "csv"},
             )
@@ -92,7 +98,14 @@ class TransportTests(unittest.TestCase):
         self.assertEqual(self.received[-1][3], b"")
 
     def test_form_and_file_parameters(self):
-        self.transport.send(Request("POST", "/echo", form={"name": "example"}, files={"archive": b"tar bytes"}))
+        self.transport.send(
+            Request(
+                "POST",
+                "/echo",
+                form={"name": "example"},
+                files={"archive": b"tar bytes"},
+            )
+        )
         _, _, headers, body = self.received[-1]
         self.assertTrue(headers["Content-Type"].startswith("multipart/form-data; boundary="))
         self.assertIn(b'name="name"', body)

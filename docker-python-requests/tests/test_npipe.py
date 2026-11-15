@@ -6,6 +6,7 @@ from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
 from docker_python.core import Request
+
 from docker_python.transports.requests import RequestsTransport
 from docker_python.transports.requests.npipe import PipeSocket
 
@@ -36,7 +37,10 @@ class NamedPipeTests(unittest.TestCase):
             with_transport = RequestsTransport("npipe:////./pipe/docker_engine")
             self.addCleanup(with_transport.close)
             self.assertFalse(with_transport.session.trust_env)
-            self.assertEqual(with_transport.send(Request("GET", "/info", query={"all": True})).body, {"ok": True})
+            self.assertEqual(
+                with_transport.send(Request("GET", "/info", query={"all": True})).body,
+                {"ok": True},
+            )
             with with_transport.stream(Request("GET", "/events")) as response:
                 self.assertEqual(b"".join(response), b'{"ok":true}')
             factory.assert_called_once_with("\\\\.\\pipe\\docker_engine", 60.0)

@@ -1,9 +1,9 @@
-from dataclasses import dataclass, field
 import json
+from dataclasses import dataclass, field
 from typing import Any
 from urllib.parse import quote
 
-import requests
+from requests import Response, Session
 from requests_unixsocket import UnixAdapter
 
 from docker_python.core import Request, Response, ResponseStream
@@ -16,7 +16,7 @@ from .npipe import NamedPipeAdapter
 class RequestsTransport:
     base_url: str = "http://localhost:2375"
     timeout: float | None = 60.0
-    session: requests.Session = field(default_factory=requests.Session)
+    session: Session = field(default_factory=Session)
 
     def __post_init__(self) -> None:
         if self.base_url.startswith("unix://"):
@@ -36,7 +36,7 @@ class RequestsTransport:
         elif self.base_url.startswith("tcp://"):
             self.base_url = "http://" + self.base_url.removeprefix("tcp://")
 
-    def _send(self, request: Request, *, stream: bool = False) -> requests.Response:
+    def _send(self, request: Request, *, stream: bool = False) -> Response:
         query = []
         for name, value in request.query.items():
             if value is None:
@@ -100,7 +100,10 @@ class RequestsTransport:
     def stream(self, request: Request) -> ResponseStream:
         result = self._send(request, stream=True)
         return ResponseStream(
-            result.status_code, dict(result.headers), result.iter_content(chunk_size=8192), result.close
+            result.status_code,
+            dict(result.headers),
+            result.iter_content(chunk_size=8192),
+            result.close,
         )
 
     def close(self) -> None:

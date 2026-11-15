@@ -11,12 +11,14 @@ dependencies = [
     'requests>=2.31',
     'urllib3>=2.0',
     'requests-unixsocket>=0.4',
+    'typing-extensions>=4',
     'pywin32>=306; sys_platform == "win32"',
+    'types-pywin32>=306; sys_platform == "win32"',
 ]
 
 [dependency-groups]
 test = ["pytest>=8.0", "pytest-cov"]
-lint = ["ruff"]
+lint = ["ruff", "ty"]
 dev = [{ include-group = "test" }, { include-group = "lint" }]
 
 [tool.setuptools.packages.find]
