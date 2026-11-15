@@ -20,7 +20,11 @@ ACTIVATE ?= { source .venv/bin/activate || source .venv/Scripts/activate; }
 	touch $@
 
 test: .venv/.installed
-	$(ACTIVATE); pytest --durations=10
+	$(ACTIVATE); pytest --ignore=itests --durations=10
+
+integration-test: .venv/.installed
+	$(ACTIVATE); pip install ./itests/ --group './itests/pyproject.toml:test'
+	$(ACTIVATE); python -m pytest itests -v --durations=10
 
 .venv/.build-installed: .venv/.created
 	$(ACTIVATE); pip install --upgrade pip build

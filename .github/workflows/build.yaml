@@ -58,7 +58,35 @@ jobs:
           (cd docker-python-requests; pytest || [ $? -eq 5 ])
           (cd examples; pytest || [ $? -eq 5 ])
 
+  integration_test:
+    needs: build
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform_name: linux/amd64
+            runner: ubuntu-24.04
+          - platform_name: windows/amd64
+            runner: windows-2022
+    name: integration_test (${{ matrix.platform_name }})
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.14'
+      - name: Install client and integration test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install ./core/ ./generator/ ./docker-python-requests/
+          python -m docker_python_generator ./docker-engine-api-specs/v1.44.yaml ./versions/v1.44
+          python -m pip install ./versions/v1.44/ --group ./itests/pyproject.toml:test
+      - name: Run integration tests against the local Docker daemon
+        run: python -m pytest itests -v
+
   release_please:
+    needs: integration_test
     if: github.event_name == 'push' && github.ref_name == 'main'
     runs-on: ubuntu-latest
     permissions:
