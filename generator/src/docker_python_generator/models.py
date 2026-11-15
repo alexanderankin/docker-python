@@ -138,6 +138,9 @@ class ModelGenerator:
 
     def emit_enum(self, name: str, schema: Schema) -> None:
         values = schema["enum"]
+        # Go's zero value for string enums can appear even when Swagger omits it.
+        if all(isinstance(value, str) for value in values) and "" not in values:
+            values = [*values, ""]
         base = (
             "str, Enum"
             if all(isinstance(v, str) for v in values)

@@ -1,13 +1,14 @@
 import sys
 import unittest
-from dataclasses import is_dataclass
+from dataclasses import dataclass, is_dataclass
+from enum import Enum
 from importlib import import_module, invalidate_caches
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import get_type_hints
 
 from docker_python.core import Response
-from docker_python.core.models import from_wire
+from docker_python.core.models import from_wire, to_wire
 
 from docker_python_generator.customizations import apply_customizations
 from docker_python_generator.discovery import SchemaDiscovery
@@ -41,10 +42,20 @@ class ModelGenerationTests(unittest.TestCase):
                         if PYTHON_TYPE not in schema:
                             module = import_module(package + "." + snake(public_name))
                             self.assertIs(getattr(models, public_name), getattr(module, public_name))
+                    runtime_modules = {package + "." + module.name for module in customized.runtime_modules}
                     for name in models.__all__:
                         cls = getattr(models, name)
                         if isinstance(cls, type) and is_dataclass(cls):
                             get_type_hints(cls)
+                        if (
+                            isinstance(cls, type)
+                            and issubclass(cls, str)
+                            and issubclass(cls, Enum)
+                            and cls.__module__ not in runtime_modules
+                        ):
+                            empty = from_wire(cls, "")
+                            self.assertIsInstance(empty, cls)
+                            self.assertEqual(to_wire(empty), "")
                 finally:
                     sys.path.remove(temp)
                     for name in list(sys.modules):
@@ -229,6 +240,32 @@ class ModelGenerationTests(unittest.TestCase):
                 result = api.DockerClient(FakeTransport()).system_version().execute()
                 self.assertIsInstance(result, models.SystemVersion)
                 self.assertEqual(result.platform.name, "Docker Engine")
+
+    def test_system_info_decodes_windows_cgroup_fields(self):
+        for version in ["1_40", "1_44", "1_55"]:
+            with self.subTest(version=version):
+                api = import_module("docker_python.versions.v_" + version)
+                models = import_module(api.__name__ + ".models")
+                payload = {"OSType": "windows", "CgroupDriver": ""}
+                if version != "1_40":
+                    payload["CgroupVersion"] = ""
+
+                @dataclass
+                class FakeTransport:
+                    body: dict[str, str]
+
+                    def send(self, request):
+                        return Response(200, {}, self.body)
+
+                result = api.DockerClient(FakeTransport(payload)).system_info().execute()
+                self.assertIsInstance(result, models.SystemInfo)
+                self.assertEqual(result.os_type, "windows")
+                self.assertIs(result.cgroup_driver, models.SystemInfoCgroupDriver.EMPTY)
+                if version != "1_40":
+                    self.assertIs(result.cgroup_version, models.SystemInfoCgroupVersion.EMPTY)
+                self.assertEqual(result.to_wire(), payload)
+                linux = models.SystemInfo.from_wire({"CgroupDriver": "systemd"})
+                self.assertIs(linux.cgroup_driver, models.SystemInfoCgroupDriver.SYSTEMD)
 
 
 if __name__ == "__main__":
