@@ -30,22 +30,22 @@ jobs:
           python -m venv .venv
           source .venv/bin/activate
           pip install --upgrade pip
-          pip install ./core/; pip install --group ./core/pyproject.toml:dev
+          pip install ./core/ --group ./core/pyproject.toml:dev
           python -c "import docker_python.core"
-          pip install ./generator/; pip install --group ./generator/pyproject.toml:dev
+          pip install ./generator/ --group ./generator/pyproject.toml:dev
           python -c "import docker_python_generator"
-          pip install ./docker-python-requests/; pip install --group ./docker-python-requests/pyproject.toml:dev
+          pip install ./docker-python-requests/ --group ./docker-python-requests/pyproject.toml:dev
           python -c "import docker_python.transports.requests"
           python -m docker_python_generator ./docker-engine-api-specs/v1.40.yaml ./versions/v1.40
           python -m docker_python_generator ./docker-engine-api-specs/v1.44.yaml ./versions/v1.44
           python -m docker_python_generator ./docker-engine-api-specs/v1.55.yaml ./versions/v1.55
-          pip install ./versions/v1.40/; pip install --group ./versions/v1.40/pyproject.toml:dev
+          pip install ./versions/v1.40/ --group ./versions/v1.40/pyproject.toml:dev
           python -c "import docker_python.versions.v_1_40"
-          pip install ./versions/v1.44/; pip install --group ./versions/v1.44/pyproject.toml:dev
+          pip install ./versions/v1.44/ --group ./versions/v1.44/pyproject.toml:dev
           python -c "import docker_python.versions.v_1_44"
-          pip install ./versions/v1.55/; pip install --group ./versions/v1.55/pyproject.toml:dev
+          pip install ./versions/v1.55/ --group ./versions/v1.55/pyproject.toml:dev
           python -c "import docker_python.versions.v_1_55"
-          pip install ./examples/; pip install --group ./examples/pyproject.toml:dev
+          pip install ./examples/ --group ./examples/pyproject.toml:dev
           python -c "import docker_python_examples"
       - run: |
           source .venv/bin/activate

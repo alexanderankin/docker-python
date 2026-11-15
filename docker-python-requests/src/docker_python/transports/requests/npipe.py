@@ -22,6 +22,11 @@ if TYPE_CHECKING:
     if sys.platform == "win32":
         from _win32typing import PyHANDLE, PyOVERLAPPEDReadBuffer
 
+if sys.version_info >= (3, 14):
+    IntMemoryView = memoryview[int]
+else:
+    IntMemoryView = memoryview
+
 
 class _PipeReader(io.RawIOBase):
     def __init__(self, pipe: "PipeSocket") -> None:
@@ -73,9 +78,9 @@ class PipeSocket:
     def _io(self, data: int, *, read: Literal[True]) -> bytes: ...
 
     @overload
-    def _io(self, data: memoryview[int], *, read: Literal[False]) -> int: ...
+    def _io(self, data: IntMemoryView, *, read: Literal[False]) -> int: ...
 
-    def _io(self, data: int | memoryview[int], *, read: bool) -> bytes | int:
+    def _io(self, data: int | IntMemoryView, *, read: bool) -> bytes | int:
         operation = self._types.OVERLAPPED()
 
         ce_return_value = self._event.CreateEvent(None, True, False, None)

@@ -3,6 +3,7 @@ __pycache__/
 build/
 dist/
 .venv/
+.tox/
 
 # Generated API models and commands; keep version package metadata.
 /versions/*/src/docker_python/versions/*/commands/*
