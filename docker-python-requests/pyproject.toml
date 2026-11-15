@@ -9,7 +9,9 @@ requires-python = ">=3.11"
 dependencies = [
     'docker-python-core==0.4.0', # x-release-please-version
     'requests>=2.31',
+    'urllib3>=2.0',
     'requests-unixsocket>=0.4',
+    'pywin32>=306; sys_platform == "win32"',
 ]
 
 [dependency-groups]

@@ -9,6 +9,7 @@ from requests_unixsocket import UnixAdapter
 from docker_python.core import Request, Response, ResponseStream
 from docker_python.core.models import to_wire
 from docker_python.core.parameters import UNSET
+from .npipe import NamedPipeAdapter
 
 
 @dataclass
@@ -25,6 +26,13 @@ class RequestsTransport:
             self.session.mount('http+unix://', UnixAdapter())
             self.session.trust_env = False
             self.base_url = 'http+unix://' + quote(socket_path, safe='')
+        elif self.base_url.startswith('npipe://'):
+            pipe_path = self.base_url.removeprefix('npipe://').replace('/', '\\')
+            if not pipe_path.startswith('\\\\.\\pipe\\') or not pipe_path.removeprefix('\\\\.\\pipe\\'):
+                raise ValueError('Docker named pipe URL must use npipe:////./pipe/<name>')
+            self.session.mount('http+npipe://', NamedPipeAdapter(pipe_path))
+            self.session.trust_env = False
+            self.base_url = 'http+npipe://localhost'
         elif self.base_url.startswith('tcp://'):
             self.base_url = 'http://' + self.base_url.removeprefix('tcp://')
 
