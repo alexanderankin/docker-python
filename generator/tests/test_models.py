@@ -1,6 +1,6 @@
 import sys
 import unittest
-from dataclasses import is_dataclass
+from dataclasses import dataclass, is_dataclass
 from importlib import import_module, invalidate_caches
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -229,6 +229,32 @@ class ModelGenerationTests(unittest.TestCase):
                 result = api.DockerClient(FakeTransport()).system_version().execute()
                 self.assertIsInstance(result, models.SystemVersion)
                 self.assertEqual(result.platform.name, "Docker Engine")
+
+    def test_system_info_decodes_windows_cgroup_fields(self):
+        for version in ["1_40", "1_44", "1_55"]:
+            with self.subTest(version=version):
+                api = import_module("docker_python.versions.v_" + version)
+                models = import_module(api.__name__ + ".models")
+                payload = {"OSType": "windows", "CgroupDriver": ""}
+                if version != "1_40":
+                    payload["CgroupVersion"] = ""
+
+                @dataclass
+                class FakeTransport:
+                    body: dict[str, str]
+
+                    def send(self, request):
+                        return Response(200, {}, self.body)
+
+                result = api.DockerClient(FakeTransport(payload)).system_info().execute()
+                self.assertIsInstance(result, models.SystemInfo)
+                self.assertEqual(result.os_type, "windows")
+                self.assertIs(result.cgroup_driver, models.SystemInfoCgroupDriver.EMPTY)
+                if version != "1_40":
+                    self.assertIs(result.cgroup_version, models.SystemInfoCgroupVersion.EMPTY)
+                self.assertEqual(result.to_wire(), payload)
+                linux = models.SystemInfo.from_wire({"CgroupDriver": "systemd"})
+                self.assertIs(linux.cgroup_driver, models.SystemInfoCgroupDriver.SYSTEMD)
 
 
 if __name__ == "__main__":
