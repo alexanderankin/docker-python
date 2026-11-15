@@ -11,6 +11,8 @@ from .json import CREATOR, VALUE, json_method
 class Model:
     @classmethod
     def from_wire(cls, data: dict[str, Any]):
+        if not is_dataclass(cls):
+            raise TypeError("Docker models must be dataclasses")
         hints = get_type_hints(cls)
         return cls(**{
             item.name: from_wire(hints[item.name], data[item.metadata['wire_name']])

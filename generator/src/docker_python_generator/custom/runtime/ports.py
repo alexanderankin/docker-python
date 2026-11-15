@@ -4,7 +4,8 @@ from dataclasses import dataclass, field
 
 from docker_python.core.json import json_creator, json_value
 
-from .binding import Binding
+# This sibling module is generated alongside this template in each version package.
+from .binding import Binding  # ty: ignore[import-not-found]
 from .exposed_ports import ExposedPort
 
 

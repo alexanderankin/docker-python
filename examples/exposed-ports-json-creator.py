@@ -7,6 +7,7 @@ from docker_python.versions.v_1_55.models import (
     ContainerCreateRequest,
     ExposedPort,
     ExposedPorts,
+    InternetProtocol,
 )
 from docker_python_examples.common import LOGGER
 
@@ -15,7 +16,7 @@ def main() -> int:
     logging.basicConfig(level=logging.INFO, format='%(message)s')
     container = ContainerCreateRequest(
         image='alpine:latest',
-        exposed_ports=ExposedPorts((ExposedPort(80), ExposedPort(443), ExposedPort(53, 'udp'))),
+        exposed_ports=ExposedPorts((ExposedPort(80), ExposedPort(443), ExposedPort(53, InternetProtocol.UDP))),
     )
     LOGGER.info('Python model: %s', container.exposed_ports)
     payload = json.dumps(container.to_wire(), indent=2)

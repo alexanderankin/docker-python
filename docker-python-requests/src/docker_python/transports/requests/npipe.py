@@ -81,6 +81,8 @@ class PipeSocket:
     def _io(self, data: IntMemoryView, *, read: Literal[False]) -> int: ...
 
     def _io(self, data: int | IntMemoryView, *, read: bool) -> bytes | int:
+        if sys.platform != "win32":
+            raise OSError("Docker named pipes require Windows")
         operation = self._types.OVERLAPPED()
 
         ce_return_value = self._event.CreateEvent(None, True, False, None)

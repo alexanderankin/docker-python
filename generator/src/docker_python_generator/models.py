@@ -76,12 +76,15 @@ class ModelGenerator:
             if name in seen:
                 raise ValueError(f"Cyclic allOf reference: {name}")
             return self.flatten(self.definitions[name], seen | {name})
-        result: Schema = {key: value for key, value in schema.items() if key != "allOf"}
+        result = schema.copy()
+        result.pop("allOf", None)
         properties = dict(schema.get("properties", {}))
         required = list(schema.get("required", []))
         for part in schema.get("allOf", []):
             parent = self.flatten(part, seen)
-            result = {**parent, **result}
+            merged = parent.copy()
+            merged.update(result)
+            result = merged
             properties = {**parent.get("properties", {}), **properties}
             required.extend(parent.get("required", []))
         if properties or "properties" in schema:
@@ -96,10 +99,10 @@ class ModelGenerator:
             return symbol + (" | None" if schema.get("x-nullable") else "")
         if "allOf" in schema:
             if len(schema["allOf"]) == 1 and "properties" not in schema:
-                merged = {
-                    **schema["allOf"][0],
-                    **{key: value for key, value in schema.items() if key != "allOf"},
-                }
+                overrides = schema.copy()
+                overrides.pop("allOf")
+                merged = schema["allOf"][0].copy()
+                merged.update(overrides)
                 return self.annotation(merged, name)
             schema = self.flatten(schema)
         if name in self.definitions and name != self.current_model:

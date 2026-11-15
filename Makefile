@@ -39,6 +39,8 @@ integration-test: .venv/.installed
 	$(ACTIVATE); pip install ./itests/ --group './itests/pyproject.toml:test'
 	$(ACTIVATE); python -m pytest itests -v --durations=10
 
+tox: tox-unit tox-integration
+
 tox-unit: .venv/.installed
 	$(ACTIVATE); tox $(TOX_ARGS)
 

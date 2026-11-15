@@ -2,7 +2,8 @@
 
 import ipaddress
 import re
-from typing import Self, get_args, get_type_hints
+from enum import Enum
+from typing import TYPE_CHECKING, Self, get_args, get_type_hints
 
 
 def host_binding_parts(value: str) -> tuple[str | None, str | None]:
@@ -27,6 +28,12 @@ def host_binding_parts(value: str) -> tuple[str | None, str | None]:
 
 
 class BindingParsingMixin:
+    host_ip: str | None
+    host_port: str | None
+
+    if TYPE_CHECKING:
+        def __init__(self, *, host_ip: str | None = None, host_port: str | None = None) -> None: ...
+
     @classmethod
     def parse(cls, value: str) -> Self:
         try:
@@ -47,6 +54,9 @@ class BindingParsingMixin:
 
 
 class DeviceParsingMixin:
+    if TYPE_CHECKING:
+        def __init__(self, *, path_on_host: str, path_in_container: str, cgroup_permissions: str) -> None: ...
+
     @classmethod
     def parse(cls, value: str) -> Self:
         try:
@@ -74,6 +84,12 @@ class DeviceParsingMixin:
 
 
 class RestartPolicyParsingMixin:
+    name: Enum | None
+    maximum_retry_count: int | None
+
+    if TYPE_CHECKING:
+        def __init__(self, *, name: Enum, maximum_retry_count: int) -> None: ...
+
     @classmethod
     def parse(cls, value: str) -> Self:
         try:

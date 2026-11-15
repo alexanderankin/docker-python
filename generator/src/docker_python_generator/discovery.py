@@ -67,7 +67,7 @@ def _do_resolve(value: _DRT, spec: Swagger) -> _DRT:
 class SchemaDiscovery:
     spec: Swagger
 
-    def resolve(self, value: dict[str, Any]) -> dict[str, Any]:
+    def resolve(self, value: _DRT) -> _DRT:
         return _do_resolve(value, self.spec)
 
     def operations(self) -> Iterator[OperationDefinition]:
@@ -78,16 +78,16 @@ class SchemaDiscovery:
             for method, raw in path_item.items():
                 if method not in HTTP_METHODS:
                     continue
-                operation = cast(Operation, self.resolve(raw))
+                operation = self.resolve(cast(Operation, raw))
                 if operation["operationId"] in seen:
                     raise ValueError(f"Duplicate operationId: {operation['operationId']}")
                 seen.add(operation["operationId"])
                 parameters = {}
                 for raw_parameter in [*shared, *operation.get("parameters", [])]:
-                    parameter = cast(Parameter, self.resolve(raw_parameter))
+                    parameter = self.resolve(raw_parameter)
                     parameters[(parameter["name"], parameter["in"])] = parameter
                 responses = {
-                    str(status): cast(Response, self.resolve(response))
+                    str(status): self.resolve(response)
                     for status, response in operation["responses"].items()
                 }
                 yield OperationDefinition(
@@ -101,10 +101,10 @@ class SchemaDiscovery:
     def normalize(self, schema: Schema) -> Schema:
         # A one-part allOf is commonly just a reference with a description.
         if "allOf" in schema and len(schema["allOf"]) == 1 and "properties" not in schema:
-            merged = {
-                **schema["allOf"][0],
-                **{key: value for key, value in schema.items() if key != "allOf"},
-            }
+            overrides = schema.copy()
+            overrides.pop("allOf")
+            merged = schema["allOf"][0].copy()
+            merged.update(overrides)
             return self.normalize(merged)
         return schema
 
@@ -153,8 +153,10 @@ class SchemaDiscovery:
                 schemas[name] = schema
             elif schema.get("type") == "array":
                 add(name + "Item", schema.get("items", {}))
-            elif isinstance(schema.get("additionalProperties"), dict):
-                add(name + "Value", schema["additionalProperties"])
+            else:
+                additional = schema.get("additionalProperties")
+                if isinstance(additional, dict):
+                    add(name + "Value", additional)
 
         for definition in self.operations():
             for parameter in definition.parameters:

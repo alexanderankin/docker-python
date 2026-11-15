@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 from typing import Any
 from urllib.parse import quote
 
-from requests import Response, Session
+from requests import Response as RequestsResponse, Session
 from requests_unixsocket import UnixAdapter
 
 from docker_python.core import Request, Response, ResponseStream
@@ -36,7 +36,7 @@ class RequestsTransport:
         elif self.base_url.startswith("tcp://"):
             self.base_url = "http://" + self.base_url.removeprefix("tcp://")
 
-    def _send(self, request: Request, *, stream: bool = False) -> Response:
+    def _send(self, request: Request, *, stream: bool = False) -> RequestsResponse:
         query = []
         for name, value in request.query.items():
             if value is None:
