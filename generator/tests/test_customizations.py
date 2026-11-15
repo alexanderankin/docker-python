@@ -30,19 +30,6 @@ class FuturePortsCustomization(ExposedPortsCustomization):
 
 
 class CustomizationTests(unittest.TestCase):
-    def test_windows_cgroup_enum_extensions_preserve_original_specs(self):
-        for path in sorted((ROOT / "docker-engine-api-specs").glob("*.yaml")):
-            with self.subTest(spec=path.name):
-                spec = load_spec(path)
-                original = deepcopy(spec)
-                customized = apply_customizations(spec).spec
-                properties = customized["definitions"]["SystemInfo"]["properties"]
-                for name in ("CgroupDriver", "CgroupVersion"):
-                    if name in properties:
-                        values = original["definitions"]["SystemInfo"]["properties"][name]["enum"]
-                        self.assertEqual(properties[name]["enum"], [*values, ""])
-                self.assertEqual(spec, original)
-
     def spec(self):
         return load_spec(ROOT / "docker-engine-api-specs/v1.55.yaml")
 

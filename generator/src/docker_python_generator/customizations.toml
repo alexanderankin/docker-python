@@ -1,12 +1,3 @@
-[enum_extensions."SystemInfo.CgroupDriver"]
-# Windows returns empty strings for Linux-only cgroup fields.
-values = [""]
-
-[enum_extensions."SystemInfo.CgroupVersion"]
-values = [""]
-# This field is absent from API 1.40.
-optional = true
-
 [fields."ContainerConfig.ExposedPorts"]
 type = "ExposedPorts"
 source = "docker_python_generator.custom.model_parsers.ExposedPortsCustomization"

@@ -1,13 +1,14 @@
 import sys
 import unittest
 from dataclasses import dataclass, is_dataclass
+from enum import Enum
 from importlib import import_module, invalidate_caches
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import get_type_hints
 
 from docker_python.core import Response
-from docker_python.core.models import from_wire
+from docker_python.core.models import from_wire, to_wire
 
 from docker_python_generator.customizations import apply_customizations
 from docker_python_generator.discovery import SchemaDiscovery
@@ -41,10 +42,20 @@ class ModelGenerationTests(unittest.TestCase):
                         if PYTHON_TYPE not in schema:
                             module = import_module(package + "." + snake(public_name))
                             self.assertIs(getattr(models, public_name), getattr(module, public_name))
+                    runtime_modules = {package + "." + module.name for module in customized.runtime_modules}
                     for name in models.__all__:
                         cls = getattr(models, name)
                         if isinstance(cls, type) and is_dataclass(cls):
                             get_type_hints(cls)
+                        if (
+                            isinstance(cls, type)
+                            and issubclass(cls, str)
+                            and issubclass(cls, Enum)
+                            and cls.__module__ not in runtime_modules
+                        ):
+                            empty = from_wire(cls, "")
+                            self.assertIsInstance(empty, cls)
+                            self.assertEqual(to_wire(empty), "")
                 finally:
                     sys.path.remove(temp)
                     for name in list(sys.modules):

@@ -66,19 +66,6 @@ def apply_customizations(spec: Swagger, config: Path | None = None) -> Customize
     settings = tomllib.loads(config.read_text())
     result: Swagger = deepcopy(spec)
     modules: dict[str, RuntimeModule] = {}
-    for target, entry in settings.get("enum_extensions", {}).items():
-        definition, _, field = target.partition(".")
-        location = f"#/definitions/{definition}/properties/{field}"
-        context = SchemaContext(spec["info"]["version"], location, result)
-        try:
-            schema = find_field(result["definitions"][definition], field, context)
-        except KeyError as error:
-            if entry.get("optional"):
-                continue
-            raise ValueError(f"API {context.api_version}: customization target missing: {location}") from error
-        if schema.get("type") != "string" or not schema.get("enum"):
-            raise ValueError(f"API {context.api_version}: {location}: expected a string enum")
-        schema["enum"] = list(dict.fromkeys([*schema["enum"], *entry["values"]]))
     for section in ("fields", "definitions"):
         for target, entry in settings.get(section, {}).items():
             definition, _, field = target.partition(".")
