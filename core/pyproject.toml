@@ -11,7 +11,7 @@ dependencies = []
 [dependency-groups]
 test = ["pytest>=8.0", "pytest-cov"]
 lint = ["ruff", "ty"]
-dev = [{ include-group = "test" }, { include-group = "lint" }, "tox>=4"]
+dev = [{ include-group = "test" }, { include-group = "lint" }, "tox>=4.50"]
 
 [tool.setuptools.packages.find]
 where = ["src"]

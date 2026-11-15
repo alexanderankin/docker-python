@@ -4,6 +4,7 @@ all:
 	python -m venv .venv && touch $@
 
 ACTIVATE ?= { source .venv/bin/activate || source .venv/Scripts/activate; }
+TOX_ARGS ?=
 
 .venv/.installed: .venv/.created
 	$(ACTIVATE); pip install -e ./core
@@ -25,6 +26,12 @@ test: .venv/.installed
 integration-test: .venv/.installed
 	$(ACTIVATE); pip install ./itests/ --group './itests/pyproject.toml:test'
 	$(ACTIVATE); python -m pytest itests -v --durations=10
+
+tox-unit: .venv/.installed
+	$(ACTIVATE); tox $(TOX_ARGS)
+
+tox-integration: .venv/.installed
+	$(ACTIVATE); tox -m itest $(TOX_ARGS)
 
 .venv/.build-installed: .venv/.created
 	$(ACTIVATE); pip install --upgrade pip build
